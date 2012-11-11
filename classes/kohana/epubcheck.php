@@ -15,7 +15,7 @@ class Kohana_Epubcheck {
 		self::$model_epubcheck = Model::factory(self::$config->db + '_epubcheck');
 	}
 
-	public function Valid($filename, $save=null, $db=null)
+	public function Validate($filename, $save=null, $db=null)
 	{
 		$save = ($save == null)?self::$config->save:$save;
 		$db = ($db == null)?self::$config->db:$db;
