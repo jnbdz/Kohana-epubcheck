@@ -1,24 +1,29 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+/**
+ *
+ * @author Jean-Nicolas Boulay
+ * @version 0.2
+ * @description
+ */
+
 class Kohana_Epubcheck {
 
 	private static $config;
 	private static $output_filename = null;
 	private static $filename = null;
 	private static $model_epubcheck = null;
-	private static $file_exist = FALSE;
-	private static $output_file_exist = FALSE;
 
 	function __construct()
 	{
+		// Get the configurations, and Model that will used across the methods
 		self::$config = Kohana::config('epubcheck');
 		self::$model_epubcheck = Model::factory(self::$config->db + '_epubcheck');
 	}
 
-	public function Validate($filename, $save=null, $db=null)
+	public function Validate($filename, $save=null)
 	{
 		$save = ($save == null)?self::$config->save:$save;
-		$db = ($db == null)?self::$config->db:$db;
 
 		self::$filename = $filename;
 		self::$output_filename = rtrim(self::$config->output_directory, '/').
@@ -38,24 +43,24 @@ class Kohana_Epubcheck {
 				   self::$filename;
 
 			passthru($to_exec, $out_exec);
+
+			if(file_exists(self::$output_filename))
+			{
+				$output_content = file_get_contents(self::$output_filename);
+				unlink(self::$output_filename);
+			}
+			else
+			{
+				$no_output_file = __('Epubcheck: There is no output file.');
+				Kohana::$log->add(Log::ERROR, $no_output_file);
+				throw Exception($no_output_file);
+			}
 		}
 		else
 		{
 			$no_epub_found = __('Epubcheck: The epub was not found.');
 			Kohana::$log->add(Log::ERROR, $no_epub_found);
 			throw Exception($no_epub_found);
-		}
-
-		if(file_exists(self::$output_filename))
-		{
-			self::$output_file_exist = TRUE;
-			$output_content = file_get_contents(self::$output_filename);
-		}
-		else
-		{
-			$no_output_file = __('Epubcheck: There is no output file.');
-			Kohana::$log->add(Log::ERROR, $no_output_file);
-			throw Exception($no_output_file);
 		}
 
 		if($save) {
@@ -67,7 +72,7 @@ class Kohana_Epubcheck {
 
 	public function list_outputs($filename)
 	{
-		self::$model_epubcheck->list_outputs();
+		self::$model_epubcheck->list_outputs($filename);
 	}
 
 	public function get_output($id)
@@ -83,14 +88,6 @@ class Kohana_Epubcheck {
 	public function remove_output($id)
 	{
 		self::$model_epubcheck->remove_output($id);
-	}
-
-	function __destruct()
-	{
-		if(file_exists(self::$output_filename))
-		{
-			unlink(self::$output_filename);
-		}
 	}
 
 } // End of Kohana_Epubcheck
